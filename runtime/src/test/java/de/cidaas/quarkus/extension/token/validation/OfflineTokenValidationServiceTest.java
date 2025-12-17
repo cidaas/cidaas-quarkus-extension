@@ -38,12 +38,16 @@ public class OfflineTokenValidationServiceTest {
 	@InjectMock
 	CacheService cacheService;
 
+	@InjectMock
+	JwtSignatureVerifier signatureVerifier;
+
 	JsonObject header;
 	TokenValidationRequest tokenValidationRequest;
 
 	@BeforeEach
 	public void initEach() {
 		when(cacheService.getJwks()).thenReturn(mockService.createJwks());
+		when(signatureVerifier.validateTokenSignature(null)).thenReturn(true);
 		doNothing().when(cacheService).refreshJwks();
 		header = mockService.createHeader();
 		tokenValidationRequest = mockService.createValidationRequest();
@@ -339,6 +343,28 @@ public class OfflineTokenValidationServiceTest {
 	public void testValidateGeneralInfo_validPayload() {
 		JsonObject payload = mockService.createPayload(new ArrayList<PayloadOptions>());
 		assertTrue(offlineTokenValidationService.validateGeneralInfo(payload));
+	}
+
+	@Test
+	public void testValidateSignature_invalidSignature() {
+		try (MockedStatic<JwtUtil> mockStatic = Mockito.mockStatic(JwtUtil.class)) {
+			mockStatic.when(() -> JwtUtil.decodeHeader(null)).thenReturn(header);
+			mockStatic.when(() -> JwtUtil.decodePayload(null)).thenReturn(mockService.createPayload(
+				Arrays.asList(PayloadOptions.ROLE, PayloadOptions.SCOPE, PayloadOptions.SCOPE_NOT_EXIST)));
+			when(signatureVerifier.validateTokenSignature(null)).thenReturn(false);
+			assertFalse(offlineTokenValidationService.validateToken(tokenValidationRequest));
+		}
+	}
+
+	@Test
+	public void testValidateSignature_validSignature() {
+		try (MockedStatic<JwtUtil> mockStatic = Mockito.mockStatic(JwtUtil.class)) {
+			mockStatic.when(() -> JwtUtil.decodeHeader(null)).thenReturn(header);
+			mockStatic.when(() -> JwtUtil.decodePayload(null)).thenReturn(mockService.createPayload(
+				Arrays.asList(PayloadOptions.ROLE, PayloadOptions.SCOPE, PayloadOptions.SCOPE_NOT_EXIST)));
+			when(signatureVerifier.validateTokenSignature(null)).thenReturn(true);
+			assertTrue(offlineTokenValidationService.validateToken(tokenValidationRequest));
+		}
 	}
 
 }

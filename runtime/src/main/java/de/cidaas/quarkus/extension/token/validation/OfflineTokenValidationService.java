@@ -20,6 +20,9 @@ public class OfflineTokenValidationService implements ValidationService {
 	@Inject
 	CacheService cacheService;
 
+	@Inject
+	JwtSignatureVerifier signatureVerifier;
+
 	private static final Logger LOG = LoggerFactory.getLogger(OfflineTokenValidationService.class);
 
 	/**
@@ -32,15 +35,16 @@ public class OfflineTokenValidationService implements ValidationService {
 	 */
 	@Override
 	public boolean validateToken(TokenValidationRequest tokenValidationRequest) {
-		JsonObject header = JwtUtil.decodeHeader(tokenValidationRequest.getToken());
+		String token = tokenValidationRequest.getToken();
+		JsonObject header = JwtUtil.decodeHeader(token);
 
 		if (header == null || validateTokenHeader(header) == false) {
 			return false;
 		}
 
-		JsonObject payload = JwtUtil.decodePayload(tokenValidationRequest.getToken());
+		JsonObject payload = JwtUtil.decodePayload(token);
 
-		if (payload == null || validateGeneralInfo(payload) == false) {
+		if (payload == null || validateGeneralInfo(payload) == false || signatureVerifier.validateTokenSignature(token) == false) {
 			return false;
 		}
 
@@ -238,4 +242,8 @@ public class OfflineTokenValidationService implements ValidationService {
 		return false;
 	}
 
+}
+
+interface JwtSignatureVerifier {
+	boolean validateTokenSignature(String token);
 }
