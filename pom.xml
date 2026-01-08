@@ -109,9 +109,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git@github.com:Cidaas/cidaas-javascript-sdk.git</connection>
-    <url>scm:git:git@github.com:Cidaas/cidaas-javascript-sdk.git</url>
-    <tag>cidaas-quarkus-extension-parent-2.0.0</tag>
+    <connection>scm:git:git@gitlab.widas.de:cidaas-public-devkits/extensions/cidaas-quarkus-extension.git</connection>
+    <url>scm:git:git@gitlab.widas.de:cidaas-public-devkits/extensions/cidaas-quarkus-extension.git</url>
+    <tag>HEAD</tag>
   </scm>
 
   <modules>
