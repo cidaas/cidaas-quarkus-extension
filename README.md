@@ -1,4 +1,4 @@
-# Cidaas Quarkus Extension
+# cidaas Quarkus Extension
 
 Quarkus Extension to integrate cidaas seamlessly to Java Project, which used Quarkus Framework.
 
