@@ -4,7 +4,7 @@ stages:
 
 build:
   stage: build
-  image: maven:3.9.6-eclipse-temurin-21
+  image: maven:3.9.9-eclipse-temurin-21
   script:
       - mvn clean install -Dmaven.test.skip=true
   artifacts:
@@ -16,7 +16,7 @@ build:
       
 test:
   stage: test
-  image: maven:3.9.6-eclipse-temurin-21
+  image: maven:3.9.9-eclipse-temurin-21
   script:
       - mvn test
       - awk -F"," '{ covered += $5; total += $4 + $5 } END { print covered, "/", total, "instructions covered"; printf "%s %0.2f", "code coverage:", 100*covered/total; print "%" }' runtime/target/site/jacoco/jacoco.csv

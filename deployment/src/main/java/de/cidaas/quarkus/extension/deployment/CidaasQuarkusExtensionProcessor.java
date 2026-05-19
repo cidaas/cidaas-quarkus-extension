@@ -4,8 +4,10 @@ import de.cidaas.quarkus.extension.address.validation.AddressValidationRequest;
 import de.cidaas.quarkus.extension.address.validation.AddressValidationResult;
 import de.cidaas.quarkus.extension.address.validation.AddressValidationService;
 import de.cidaas.quarkus.extension.annotation.GroupAllowed;
+import de.cidaas.quarkus.extension.annotation.PatValidation;
 import de.cidaas.quarkus.extension.annotation.TokenValidation;
 import de.cidaas.quarkus.extension.runtime.AuthFilter;
+import de.cidaas.quarkus.extension.runtime.PatAuthFilter;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -24,12 +26,17 @@ class CidaasQuarkusExtensionProcessor {
     CustomContainerRequestFilterBuildItem registerAuthFilter() {
         return new CustomContainerRequestFilterBuildItem(AuthFilter.class.getName());
     }
+
+    @BuildStep
+    CustomContainerRequestFilterBuildItem registerPatAuthFilter() {
+        return new CustomContainerRequestFilterBuildItem(PatAuthFilter.class.getName());
+    }
     
     @BuildStep
     AdditionalBeanBuildItem registerAdditonalBeans() {
         return AdditionalBeanBuildItem.builder()
-                .addBeanClasses(TokenValidation.class, GroupAllowed.class, AddressValidationService.class, 
-                					AddressValidationRequest.class, AddressValidationResult.class)
+                .addBeanClasses(TokenValidation.class, PatValidation.class, GroupAllowed.class,
+                        AddressValidationService.class, AddressValidationRequest.class, AddressValidationResult.class)
                 .build();
     }
 }

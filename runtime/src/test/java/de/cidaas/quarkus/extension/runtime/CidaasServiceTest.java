@@ -1,27 +1,25 @@
 package de.cidaas.quarkus.extension.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 
 import de.cidaas.quarkus.extension.token.validation.MockService;
 import de.cidaas.quarkus.extension.token.validation.TokenValidationRequest;
+import de.cidaas.quarkus.extension.token.validation.ValidationMode;
+import de.cidaas.quarkus.extension.token.validation.ValidationResult;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.core.Response;
 
 @QuarkusTest
 public class CidaasServiceTest {
+
 	@InjectMock
-	@RestClient
-	MockCidaasClient cidaasClient;
+	TokenValidationEngine validationEngine;
 
 	@Inject
 	CidaasService cidaasService;
@@ -30,12 +28,11 @@ public class CidaasServiceTest {
 	MockService mockService;
 
 	@Test
-	public void testCallValidateTokenWithRequest() {
-		JsonObject body = Json.createObjectBuilder().add("active", true).build();
-		Response response = Response.ok(body).build();
+	public void testValidateTokenDelegatesToEngine() {
 		TokenValidationRequest request = mockService.createValidationRequest();
-		when(cidaasClient.callValidateToken(request)).thenReturn(response);
+		when(validationEngine.validate(eq(request), any(), eq(""), eq(false), eq(ValidationMode.OFF),
+				eq(ValidationMode.OFF), eq(ValidationMode.REPORT)))
+				.thenReturn(ValidationResult.valid(null));
 		assertTrue(cidaasService.validateToken(request));
-		verify(cidaasClient, times(1)).callValidateToken(request);
 	}
 }

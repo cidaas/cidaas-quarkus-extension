@@ -3,6 +3,7 @@ package de.cidaas.quarkus.extension.token.validation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -25,6 +26,21 @@ public class TokenValidationMapperTest {
 			@Override
 			public String tokenTypeHint() {
 				return null;
+			}
+
+			@Override
+			public String baseUrl() {
+				return "";
+			}
+
+			@Override
+			public String dpopValidationMode() {
+				return "";
+			}
+
+			@Override
+			public String mtlsValidationMode() {
+				return "";
 			}
 
 			@Override
@@ -94,6 +110,21 @@ public class TokenValidationMapperTest {
 			}
 
 			@Override
+			public String baseUrl() {
+				return "";
+			}
+
+			@Override
+			public String dpopValidationMode() {
+				return "";
+			}
+
+			@Override
+			public String mtlsValidationMode() {
+				return "";
+			}
+
+			@Override
 			public String[] roles() {
 				String[] roles = { "role1", "role2" };
 				return roles;
@@ -113,6 +144,11 @@ public class TokenValidationMapperTest {
 					}
 
 					@Override
+					public String groupType() {
+						return "";
+					}
+
+					@Override
 					public String[] roles() {
 						String[] roles = { "grouprole1" };
 						return roles;
@@ -120,6 +156,11 @@ public class TokenValidationMapperTest {
 
 					@Override
 					public boolean strictRoleValidation() {
+						return false;
+					}
+
+					@Override
+					public boolean strictValidation() {
 						return false;
 					}
 				};
@@ -135,6 +176,11 @@ public class TokenValidationMapperTest {
 					}
 
 					@Override
+					public String groupType() {
+						return "";
+					}
+
+					@Override
 					public String[] roles() {
 						String[] roles = { "grouprole2" };
 						return roles;
@@ -143,6 +189,11 @@ public class TokenValidationMapperTest {
 					@Override
 					public boolean strictRoleValidation() {
 						return true;
+					}
+
+					@Override
+					public boolean strictValidation() {
+						return false;
 					}
 				};
 				GroupAllowed[] groups = { group1, group2 };
@@ -197,6 +248,46 @@ public class TokenValidationMapperTest {
 		assertEquals(result.isStrictScopeValidation(), tokenValidation.strictScopeValidation());
 		assertEquals(result.isStrictRoleValidation(), tokenValidation.strictRoleValidation());
 		assertEquals(result.isStrictValidation(), tokenValidation.strictValidation());
+	}
+
+	@Test
+	void mapGroupsIncludesGroupType() {
+		GroupAllowed group = new GroupAllowed() {
+			@Override
+			public Class<? extends Annotation> annotationType() {
+				return GroupAllowed.class;
+			}
+
+			@Override
+			public String id() {
+				return "g1";
+			}
+
+			@Override
+			public String groupType() {
+				return "USER";
+			}
+
+			@Override
+			public String[] roles() {
+				return new String[] { "r1" };
+			}
+
+			@Override
+			public boolean strictRoleValidation() {
+				return true;
+			}
+
+			@Override
+			public boolean strictValidation() {
+				return true;
+			}
+		};
+
+		Group mapped = TokenValidationMapper.mapGroups(new GroupAllowed[] { group }).get(0);
+		assertEquals("g1", mapped.getGroupId());
+		assertEquals("USER", mapped.getGroupType());
+		assertTrue(mapped.isStrictValidation());
 	}
 
 }

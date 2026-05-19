@@ -14,8 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import de.cidaas.quarkus.extension.runtime.CacheService;
+import de.cidaas.quarkus.extension.runtime.CidaasInstanceService;
 import de.cidaas.quarkus.extension.runtime.CustomTestProfile;
+import de.cidaas.quarkus.extension.runtime.NimbusJwtSignatureVerifier;
+import de.cidaas.quarkus.extension.runtime.OfflineTokenValidationService;
 import de.cidaas.quarkus.extension.token.validation.MockService.PayloadOptions;
 import de.cidaas.quarkus.extension.token.validation.MockService.ValidationOptions;
 import io.quarkus.test.InjectMock;
@@ -36,19 +38,20 @@ public class OfflineTokenValidationServiceTest {
 	MockService mockService;
 
 	@InjectMock
-	CacheService cacheService;
+	CidaasInstanceService instanceService;
 
 	@InjectMock
-	JwtSignatureVerifier signatureVerifier;
+	NimbusJwtSignatureVerifier signatureVerifier;
 
 	JsonObject header;
 	TokenValidationRequest tokenValidationRequest;
 
 	@BeforeEach
 	public void initEach() {
-		when(cacheService.getJwks()).thenReturn(mockService.createJwks());
-		when(signatureVerifier.validateTokenSignature(null)).thenReturn(true);
-		doNothing().when(cacheService).refreshJwks();
+		String baseUrl = "https://mock.example.com";
+		when(instanceService.defaultBaseUrl()).thenReturn(baseUrl);
+		when(instanceService.getJwks(baseUrl)).thenReturn(mockService.createJwks());
+		when(signatureVerifier.validateTokenSignature(null, baseUrl)).thenReturn(true);
 		header = mockService.createHeader();
 		tokenValidationRequest = mockService.createValidationRequest();
 	}
@@ -294,9 +297,9 @@ public class OfflineTokenValidationServiceTest {
 	@Test
 	public void testValidateTokenHeader_emptyJwks() {
 		JsonObject emptyJwks = Json.createObjectBuilder().add("keys", Json.createArrayBuilder()).build();
-		when(cacheService.getJwks()).thenReturn(emptyJwks);
+		when(instanceService.getJwks("https://mock.example.com")).thenReturn(emptyJwks);
 		TokenValidationException exception = assertThrows(TokenValidationException.class, () -> {
-			offlineTokenValidationService.validateTokenHeader(header);
+			offlineTokenValidationService.validateTokenHeader(header, "https://mock.example.com");
 		});
 		assertTrue(exception.getMessage().contains("JWK invalid!"));
 	}
@@ -304,45 +307,42 @@ public class OfflineTokenValidationServiceTest {
 	@Test
 	public void testValidateTokenHeader_missingHeaderClaim() {
 		JsonObject header = Json.createObjectBuilder().add("alg", "123").build();
-		TokenValidationException exception = assertThrows(TokenValidationException.class, () -> {
-			offlineTokenValidationService.validateTokenHeader(header);
-		});
-		assertTrue(exception.getMessage().contains("Header invalid!"));
+		assertFalse(offlineTokenValidationService.validateTokenHeader(header, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateTokenHeader_invalidCombination() {
 		header = Json.createObjectBuilder().add("alg", "abc").add("kid", "456").build();
-		assertFalse(offlineTokenValidationService.validateTokenHeader(header));
+		assertFalse(offlineTokenValidationService.validateTokenHeader(header, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateTokenHeader_validHeader() {
-		assertTrue(offlineTokenValidationService.validateTokenHeader(header));
+		assertTrue(offlineTokenValidationService.validateTokenHeader(header, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateGeneralInfo_missingClaim() {
 		JsonObject payload = Json.createObjectBuilder().add("test", "test").build();
-		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload));
+		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateGeneralInfo_invalidIss() {
 		JsonObject payload = mockService.createPayload(Arrays.asList(PayloadOptions.ISS_INVALID));
-		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload));
+		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateGeneralInfo_expiredToken() {
 		JsonObject payload = mockService.createPayload(Arrays.asList(PayloadOptions.EXP_INVALID));
-		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload));
+		assertFalse(offlineTokenValidationService.validateGeneralInfo(payload, "https://mock.example.com"));
 	}
 
 	@Test
 	public void testValidateGeneralInfo_validPayload() {
 		JsonObject payload = mockService.createPayload(new ArrayList<PayloadOptions>());
-		assertTrue(offlineTokenValidationService.validateGeneralInfo(payload));
+		assertTrue(offlineTokenValidationService.validateGeneralInfo(payload, "https://mock.example.com"));
 	}
 
 	@Test
@@ -351,7 +351,7 @@ public class OfflineTokenValidationServiceTest {
 			mockStatic.when(() -> JwtUtil.decodeHeader(null)).thenReturn(header);
 			mockStatic.when(() -> JwtUtil.decodePayload(null)).thenReturn(mockService.createPayload(
 				Arrays.asList(PayloadOptions.ROLE, PayloadOptions.SCOPE, PayloadOptions.SCOPE_NOT_EXIST)));
-			when(signatureVerifier.validateTokenSignature(null)).thenReturn(false);
+			when(signatureVerifier.validateTokenSignature(null, "https://mock.example.com")).thenReturn(false);
 			assertFalse(offlineTokenValidationService.validateToken(tokenValidationRequest));
 		}
 	}
@@ -362,7 +362,7 @@ public class OfflineTokenValidationServiceTest {
 			mockStatic.when(() -> JwtUtil.decodeHeader(null)).thenReturn(header);
 			mockStatic.when(() -> JwtUtil.decodePayload(null)).thenReturn(mockService.createPayload(
 				Arrays.asList(PayloadOptions.ROLE, PayloadOptions.SCOPE, PayloadOptions.SCOPE_NOT_EXIST)));
-			when(signatureVerifier.validateTokenSignature(null)).thenReturn(true);
+			when(signatureVerifier.validateTokenSignature(null, "https://mock.example.com")).thenReturn(true);
 			assertTrue(offlineTokenValidationService.validateToken(tokenValidationRequest));
 		}
 	}

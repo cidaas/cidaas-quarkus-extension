@@ -5,11 +5,11 @@ import java.util.Optional;
 
 import org.jboss.resteasy.reactive.RestResponse;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
-import de.cidaas.quarkus.extension.annotation.TokenValidation;
+
+import de.cidaas.quarkus.extension.annotation.PatValidation;
 import de.cidaas.quarkus.extension.token.validation.TokenValidationMapper;
 import de.cidaas.quarkus.extension.token.validation.TokenValidationRequest;
 import de.cidaas.quarkus.extension.token.validation.UnauthorizedResponse;
-import de.cidaas.quarkus.extension.token.validation.ValidationMode;
 import de.cidaas.quarkus.extension.token.validation.ValidationResult;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
@@ -18,7 +18,7 @@ import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-public class AuthFilter {
+public class PatAuthFilter {
 
 	@Inject
 	ResourceInfo resourceInfo;
@@ -27,19 +27,16 @@ public class AuthFilter {
 	TokenValidationEngine validationEngine;
 
 	@Inject
-	CidaasExtensionConfig extensionConfig;
-
-	@Inject
 	CidaasAuthContext authContext;
 
 	@ServerRequestFilter
-	public Optional<RestResponse<?>> getFilter(ContainerRequestContext requestContext) {
+	public Optional<RestResponse<?>> filter(ContainerRequestContext requestContext) {
 		if (resourceInfo == null || resourceInfo.getResourceMethod() == null) {
 			return Optional.empty();
 		}
 		Method method = resourceInfo.getResourceMethod();
-		TokenValidation tokenValidation = method.getAnnotation(TokenValidation.class);
-		if (tokenValidation == null) {
+		PatValidation patValidation = method.getAnnotation(PatValidation.class);
+		if (patValidation == null) {
 			return Optional.empty();
 		}
 
@@ -48,14 +45,8 @@ public class AuthFilter {
 			return Optional.of(unauthorized());
 		}
 
-		TokenValidationRequest request = TokenValidationMapper.mapToValidationRequest(metadata.getAccessToken(),
-				tokenValidation);
-		ValidationMode dpopMode = resolveMode(tokenValidation.dpopValidationMode(), extensionConfig.dpopMode());
-		ValidationMode mtlsMode = resolveMode(tokenValidation.mtlsValidationMode(), extensionConfig.mtlsMode());
-
-		ValidationResult result = validationEngine.validate(request, metadata, tokenValidation.baseUrl(),
-				tokenValidation.offlineValidation(), dpopMode, mtlsMode, extensionConfig.accessTokenTypeMode());
-
+		TokenValidationRequest request = mapPatRequest(metadata.getAccessToken(), patValidation);
+		ValidationResult result = validationEngine.validatePat(request, metadata, patValidation.baseUrl());
 		if (!result.isValid()) {
 			return Optional.of(unauthorized());
 		}
@@ -63,11 +54,24 @@ public class AuthFilter {
 		return Optional.empty();
 	}
 
-	private ValidationMode resolveMode(String annotationValue, ValidationMode defaultMode) {
-		if (annotationValue == null || annotationValue.isBlank()) {
-			return defaultMode;
+	private TokenValidationRequest mapPatRequest(String token, PatValidation patValidation) {
+		TokenValidationRequest request = new TokenValidationRequest();
+		request.setToken(token);
+		request.setToken_type_hint("pat");
+		if (patValidation.roles() != null) {
+			request.setRoles(java.util.Arrays.asList(patValidation.roles()));
 		}
-		return ValidationMode.from(annotationValue);
+		if (patValidation.scopes() != null) {
+			request.setScopes(java.util.Arrays.asList(patValidation.scopes()));
+		}
+		if (patValidation.groups() != null) {
+			request.setGroups(TokenValidationMapper.mapGroups(patValidation.groups()));
+		}
+		request.setStrictRoleValidation(patValidation.strictRoleValidation());
+		request.setStrictGroupValidation(patValidation.strictGroupValidation());
+		request.setStrictScopeValidation(patValidation.strictScopeValidation());
+		request.setStrictValidation(patValidation.strictValidation());
+		return request;
 	}
 
 	private RestResponse<?> unauthorized() {

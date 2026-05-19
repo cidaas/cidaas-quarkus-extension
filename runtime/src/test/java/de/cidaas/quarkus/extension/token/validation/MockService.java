@@ -37,7 +37,7 @@ public class MockService {
 		if (options.contains(PayloadOptions.ISS_INVALID)) {
 			builder.add("iss", "invalidUrl");
 		} else {
-			builder.add("iss", "mockUrl");
+			builder.add("iss", "https://mock.example.com");
 		}
 
 		if (options.contains(PayloadOptions.EXP_INVALID)) {
