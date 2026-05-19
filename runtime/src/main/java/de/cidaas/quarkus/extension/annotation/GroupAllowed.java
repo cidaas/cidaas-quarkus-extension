@@ -10,7 +10,11 @@ import java.lang.annotation.Target;
 public @interface GroupAllowed {
 	String id();
 
+	String groupType() default "";
+
 	String[] roles();
 
 	boolean strictRoleValidation() default false;
+
+	boolean strictValidation() default false;
 }

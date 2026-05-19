@@ -4,7 +4,7 @@ Quarkus Extension to integrate cidaas seamlessly to Java Project, which used Qua
 
 ## Requirement
 
-Ensure your project is using Quarkus Framework v3.12.0 or later and using Quarkus REST extension instead of RESTEasy Classic or RESTEasy Reactive, to use cidaas-quarkus-extension v2.0 and later.
+Ensure your project is using Quarkus Framework v3.35.0 or later (Java 21 recommended) and the Quarkus REST extension instead of RESTEasy Classic or RESTEasy Reactive, to use cidaas-quarkus-extension v3.0 and later.
 
 ## Installation
 
@@ -20,15 +20,29 @@ From Maven pom.xml, add the following dependency:
 
 ## Initialisation
 
-After adding extension dependency, add the following line to application.properties file:
+After adding the extension dependency, configure your cidaas instance in `application.properties` (aligned with the public Go interceptor v4 external model):
 
-```java
-de.cidaas.quarkus.extension.runtime.CidaasClient/mp-rest/url=<cidaas_base_url>
+```properties
+de.cidaas.quarkus.extension.base-url=https://your-instance.cidaas.de
+de.cidaas.quarkus.extension.client-id=<app_client_id>
+de.cidaas.quarkus.extension.client-secret=<app_client_secret>
 ```
 
-It will ensure a correct api url to be called for token validation.
+`client-id` and `client-secret` are required for online introspection. For offline validation only, `base-url` is sufficient (JWKS is resolved via OpenID discovery).
 
-By default, jwk list will be cached for offline validation purpose. The frequency to refresh jwk could be overwrite by adding the following line to application.properties file:
+The legacy key `de.cidaas.quarkus.extension.runtime.CidaasClient/mp-rest/url` is still accepted as a fallback for `base-url`.
+
+Optional validation modes (defaults match public Go v4: DPoP/mTLS off, access-token type report-only):
+
+```properties
+de.cidaas.quarkus.extension.dpop-validation-mode=off
+de.cidaas.quarkus.extension.mtls-validation-mode=off
+de.cidaas.quarkus.extension.access-token-type-validation-mode=report
+```
+
+Allowed values for each mode: `off`, `report`, `enforce`.
+
+By default, the JWKS list is cached for offline validation. The refresh interval can be overridden with:
 
 ```java
 de.cidaas.quarkus.extension.cache-refresh-rate=216000s
@@ -60,14 +74,41 @@ To do token validation either by using cidaas introspection endpoint or using of
 | strictValidation      | If true, user will need to have each of defined validation (roles, groups and/or scopes). E.g. valid roles & valid scopes. By default, user will be able to access api only with 1 validation e.g. valid roles only | false         |
 | offlineValidation      | If true, token will be validated locally using offline token validation, without calling introspection endpoint | false         |
 | tokenTypeHint         | described which type of token is currently being validated. e.g. access_token                                                                                                                                       | Empty String  |
+| baseUrl               | Override instance base URL for this endpoint (empty = global config)                                                                                                              | Empty String  |
+| dpopValidationMode    | Per-endpoint DPoP mode: `off`, `report`, `enforce` (empty = global config)                                                                                                          | Empty String  |
+| mtlsValidationMode  | Per-endpoint mTLS binding mode: `off`, `report`, `enforce` (empty = global config)                                                                                                  | Empty String  |
+
+Unauthorized requests receive a JSON body with `errorMsg` (HTTP 401), matching the public Go interceptor.
+
+After successful validation, inject `CidaasAuthContext` to read parsed token claims as `TokenData`:
+
+```java
+@Inject
+CidaasAuthContext authContext;
+
+@GET
+@Path("/me")
+@TokenValidation
+public String me() {
+    return authContext.getTokenData().getSub();
+}
+```
+
+For programmatic validation without the filter, inject `TokenVerifier` (Go `verify.ByTokenRequest` equivalent).
+
+### Personal Access Token (PAT)
+
+Use `@PatValidation` on a resource method to validate PATs via `/accesspass-srv/passes/pat/introspect`. Members are the same as `@TokenValidation` for roles, groups, and scopes (without offline/DPoP/mTLS options).
 
 to validate groups, @GroupAllowed Annotation(s) have to be added. It has the following member:
 
 | Name                 | Description                                                                                                          | is required                |
 |----------------------|----------------------------------------------------------------------------------------------------------------------|----------------------------|
 | id                   | group id                                                                                                             | yes                        |
+| groupType            | optional group type filter (empty = match by id only)                                                                | no                         |
 | roles                | List of group roles, which are allowed to access secured api                                                         | yes                        |
 | strictRoleValidation | If true, user will need all roles from the group roles list to access api. By default, user only need 1 of the roles | no, default value is false |
+| strictValidation     | If true, all configured group roles must match (AND); otherwise any match suffices (OR)                            | no, default value is false |
 
 Examples of function being secured with cidaas quarkus extension looks like the following:
 

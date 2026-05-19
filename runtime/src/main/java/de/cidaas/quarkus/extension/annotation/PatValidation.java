@@ -5,16 +5,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Validates a Personal Access Token via PAT introspection
+ * ({@code /accesspass-srv/passes/pat/introspect}), aligned with Go {@code pkg/patinterceptor}.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface TokenValidation {
-	String tokenTypeHint() default "";
-
+public @interface PatValidation {
 	String baseUrl() default "";
-
-	String dpopValidationMode() default "";
-
-	String mtlsValidationMode() default "";
 
 	String[] roles() default {};
 
@@ -29,6 +27,4 @@ public @interface TokenValidation {
 	boolean strictScopeValidation() default false;
 
 	boolean strictValidation() default false;
-
-	boolean offlineValidation() default false;
 }

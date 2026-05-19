@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.cidaas</groupId>
   <artifactId>cidaas-quarkus-extension-parent</artifactId>
-  <version>2.1.0</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>Quarkus Extension to integrate cidaas seamlessly to Java Project, which used Quarkus Framework.</description>
@@ -50,12 +50,12 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-deploy-plugin</artifactId>
-						<version>2.7</version>
+						<version>${maven-deploy-plugin.version}</version>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
+						<version>${maven-gpg-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -69,7 +69,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>3.2.1</version>
+						<version>${maven-source-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>attach-sources</id>
@@ -82,7 +82,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>${maven-javadoc-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -119,13 +119,18 @@
     <module>runtime</module>
   </modules>
   <properties>
-    <compiler-plugin.version>3.12.1</compiler-plugin.version>
+    <compiler-plugin.version>3.14.0</compiler-plugin.version>
     <failsafe-plugin.version>${surefire-plugin.version}</failsafe-plugin.version>
-    <maven.compiler.release>17</maven.compiler.release>
+    <jacoco-plugin.version>0.8.14</jacoco-plugin.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+    <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.version>3.12.3</quarkus.version>
-    <surefire-plugin.version>3.2.5</surefire-plugin.version>
+    <quarkus.version>3.35.3</quarkus.version>
+    <surefire-plugin.version>3.5.3</surefire-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -172,10 +177,16 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${compiler-plugin.version}</version>
           <configuration>
+            <release>${maven.compiler.release}</release>
             <compilerArgs>
               <arg>-parameters</arg>
             </compilerArgs>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
