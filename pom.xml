@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.cidaas</groupId>
   <artifactId>cidaas-quarkus-extension-parent</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <description>Quarkus Extension to integrate cidaas seamlessly to Java Project, which used Quarkus Framework.</description>
