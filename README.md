@@ -30,7 +30,7 @@ de.cidaas.quarkus.extension.client-secret=<app_client_secret>
 
 `client-id` and `client-secret` are required for online introspection. For offline validation only, `base-url` is sufficient (JWKS is resolved via OpenID discovery).
 
-The legacy key `de.cidaas.quarkus.extension.runtime.CidaasClient/mp-rest/url` is still accepted as a fallback for `base-url`.
+The legacy key `de.cidaas.quarkus.extension.runtime.CidaasClient/mp-rest/url`, which has been used up until `v2.1.0`, is still accepted as a fallback for `base-url`.
 
 Optional validation modes (defaults match public Go v4: DPoP/mTLS off, access-token type report-only):
 
